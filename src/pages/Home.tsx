@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <NavBar />
-      <Typography>Home Page</Typography>
+      <Typography>Home Page Here</Typography>
     </Box>
   );
 }
