@@ -7,6 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 
 import NavBar from './components/NavBar';
 import Home from './pages/Home';
+import { Typography } from '@mui/material';
 
 function App() {
   return (
