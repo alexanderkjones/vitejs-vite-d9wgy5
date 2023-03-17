@@ -1,5 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore, CollectionReference, collection, DocumentData } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,8 +11,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-console.log(import.meta.env);
-console.log(firebaseConfig);
+// This is just a helper to add the type to the db responses
+export const createCollection = <T = DocumentData>(collectionName: string) => {
+  return collection(getFirestore(), collectionName) as CollectionReference<T>;
+};
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

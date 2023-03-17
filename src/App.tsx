@@ -1,17 +1,15 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
 
-import Box from '@mui/material/Box';
-import CssBaseline from '@mui/material/CssBaseline';
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
 
-import NavBar from './components/NavBar';
-import Home from './pages/Home';
-import { Typography } from '@mui/material';
+import Home from "./pages/Home";
 
 function App() {
   return (
-    <Box className="App" sx={{ display: 'flex' }}>
+    <Box className="App" sx={{ display: "flex" }}>
       <CssBaseline />
       <Router>
         <AuthProvider>
