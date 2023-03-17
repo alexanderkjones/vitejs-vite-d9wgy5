@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc } from "@firebase/firestore";
-import { createCollection, User as FirebaseUser } from "../firebase.js";
+import { createCollection } from "../firebase.js";
+import { User as FirebaseUser } from "firebase/auth";
 import { IUser } from "../types/User";
 
 const usersCollection = createCollection<IUser>("users");
