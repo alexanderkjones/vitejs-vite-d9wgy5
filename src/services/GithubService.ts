@@ -14,3 +14,4 @@ export function getLocalGithubAccessToken(): string | null {
 export function clearLocalGithubAccessToken(): void {
   localStorage.setItem(TOKEN_KEY, JSON.stringify(null));
 }
+
