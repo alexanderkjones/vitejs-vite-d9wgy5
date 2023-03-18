@@ -3,4 +3,4 @@ import { Octokit } from "@octokit/rest";
 
 const octokit = new Octokit();
 
-export type IGetAuthenticatedUserResponseDataType = GetResponseDataTypeFromEndpointMethod<typeof octokit.users.getAuthenticated>;
+export type IGithubAuthenticatedUserProfileData = GetResponseDataTypeFromEndpointMethod<typeof octokit.users.getAuthenticated>;
