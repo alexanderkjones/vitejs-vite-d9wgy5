@@ -1,4 +1,10 @@
+export interface IProjectList {
+  [index: number]: IProject;
+}
+
 export interface IProject {
   uid: string;
-  email: string | null;
+  title: string;
+  description: string;
+  updated: number;
 }
