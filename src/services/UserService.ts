@@ -6,10 +6,7 @@ import { IUser } from "../types/User";
 const usersCollection = createCollection<IUser>("users");
 
 export async function createUser(firebaseUser: FirebaseUser): Promise<IUser | null> {
-  const newUser = {
-    uid: firebaseUser.uid,
-    email: firebaseUser.email,
-  };
+  const newUser: IUser = { uid: firebaseUser.uid, email: firebaseUser.email };
   await setUser(newUser.uid, newUser);
   const user = await getUser(newUser.uid);
   return user ? user : null;

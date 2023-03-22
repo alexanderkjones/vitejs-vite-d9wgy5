@@ -5,7 +5,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 
-import Home from "./pages/Home";
+import Home from "./pages/home/Home";
 
 function App() {
   return (

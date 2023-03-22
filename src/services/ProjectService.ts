@@ -1,25 +1,47 @@
-import React from "react";
+import { doc, getDoc, getDocs, setDoc, query, where, deleteDoc } from "@firebase/firestore";
+import { createCollection } from "../firebase.js";
+import { createGithubRepoForAuthenticated } from "../services/GithubService";
+
 import { IProject } from "../types/Project";
 
-export async function projectExists(userId:string, name:string):Promise<boolean>{
-  const project = await getProject(userId, name);
-  return project ? true : false;
+const projectCollection = createCollection<IProject>("projects");
+
+export async function createProject(title: string, description: string, userUID: string, isPrivate: boolean): Promise<IProject | null> {
+  const repository = await createGithubRepoForAuthenticated(title, isPrivate);
+  if (!repository) return null;
+  const projectDocRef = doc(projectCollection);
+  const project: IProject = {
+    uid: projectDocRef.id,
+    title: title,
+    description: description,
+    userUID: userUID,
+    updated: Date.now(),
+    repo: { owner: repository.data.owner.name, name: repository.data.name },
+  };
+  const projectDoc = await setDoc(projectDocRef, project);
+  return project;
 }
 
-export async function getProject(userId: string, name: string){
-
+export async function getProjectsByUserUID(userUID: string): Promise<IProject[]> {
+  const result: IProject[] = [];
+  const q = query(projectCollection, where("userUID", "==", userUID));
+  const querySnapshot = await getDocs(q);
+  querySnapshot.forEach((doc) => {
+    result.push(doc.data());
+  });
+  return result;
 }
 
-export async function getProjects(userID:string){
-
+export async function getProjectByUID(uid: string): Promise<IProject | null> {
+  const projectDocRef = doc(projectCollection, uid);
+  const projectDoc = await getDoc(projectDocRef);
+  const project = projectDoc.data();
+  return project ? project : null;
 }
 
-export async function createProject(name: string, repo:<IGithubRepository>|null = null) {
-  const projectExists = await getProject(name);
-  if(projectExists){
+export async function updateProject(id: string, data: IProject) {}
 
-  }
-  
+export async function deleteProjectByUID(uid: string): Promise<void> {
+  const projectDocRef = doc(projectCollection, uid);
+  const projectDoc = await deleteDoc(projectDocRef);
 }
-
-export async function getProjects
