@@ -5,6 +5,7 @@ import { IUser } from "../../types/User";
 import { IProject } from "../../types/Project";
 import { createProject, getProjectsByUserUID } from "../../services/ProjectService";
 import ProjectList from "./ProjectList";
+import NewProjectDialog from "./NewProjectDialog";
 
 // MUI
 import Box from "@mui/material/Box";
@@ -21,6 +22,7 @@ import CreateNewFolderOutlinedIcon from "@mui/icons-material/CreateNewFolderOutl
 
 export default function Home() {
   const { currentUser } = useAuth();
+  const [openNewProjectDialog, setOpenNewProjectDialog] = useState<boolean>(false);
   const [projectList, setProjectList] = useState<IProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<IProject | null>(null);
 
@@ -28,11 +30,22 @@ export default function Home() {
     return <Navigate to={"/" + selectedProject.uid} />;
   }
 
-  async function newProjectHandler(event: React.MouseEvent<HTMLButtonElement>) {
-    createProject();
+  async function newProjectButtonHandler(event: React.MouseEvent<HTMLButtonElement>) {
+    setOpenNewProjectDialog(true);
+  }
+
+  async function handleCreateNewProject(title: string, description: string) {
+    console.log(title, description);
+    if (!currentUser) return;
+    const project = await createProject(title, description, currentUser.uid, false);
+    if (!project) {
+      return;
+    }
+    return <Navigate to={"/" + project.uid} />;
   }
 
   useEffect(() => {
+    console.log(currentUser);
     const getProjectList = async (user: IUser) => {
       const projects: IProject[] = await getProjectsByUserUID(user.uid);
       setProjectList(projects);
@@ -41,7 +54,7 @@ export default function Home() {
     if (currentUser) {
       getProjectList(currentUser);
     }
-  }, []);
+  }, [currentUser]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -52,7 +65,7 @@ export default function Home() {
         </Box>
         <Box sx={{ display: "flex", flexGrow: 1 }}></Box>
         <Box>
-          <Button variant="outlined" size="small" startIcon={<CreateNewFolderOutlinedIcon />}>
+          <Button onClick={newProjectButtonHandler} variant="outlined" size="small" startIcon={<CreateNewFolderOutlinedIcon />}>
             New Project
           </Button>
         </Box>
@@ -60,6 +73,7 @@ export default function Home() {
       <Box sx={{ display: "flex", p: 5 }}>
         <ProjectList projectList={projectList} onSelected={setSelectedProject} />
       </Box>
+      {currentUser && <NewProjectDialog open={openNewProjectDialog} setOpen={setOpenNewProjectDialog} handleCreateNewProject={handleCreateNewProject} />}
     </Box>
   );
 }

@@ -9,6 +9,7 @@ const projectCollection = createCollection<IProject>("projects");
 export async function createProject(title: string, description: string, userUID: string, isPrivate: boolean): Promise<IProject | null> {
   const repository = await createGithubRepoForAuthenticated(title, isPrivate);
   if (!repository) return null;
+  console.log(repository);
   const projectDocRef = doc(projectCollection);
   const project: IProject = {
     uid: projectDocRef.id,
@@ -16,7 +17,7 @@ export async function createProject(title: string, description: string, userUID:
     description: description,
     userUID: userUID,
     updated: Date.now(),
-    repo: { owner: repository.data.owner.name, name: repository.data.name },
+    repo: { owner: repository.data.full_name.split("/")[0], name: repository.data.full_name.split("/")[1] },
   };
   const projectDoc = await setDoc(projectDocRef, project);
   return project;

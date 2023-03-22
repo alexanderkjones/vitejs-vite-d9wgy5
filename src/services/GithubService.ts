@@ -46,6 +46,7 @@ export async function createGithubRepoForAuthenticated(name: string, isPrivate: 
       private: isPrivate,
     });
   } catch (e) {
+    console.log(e);
     return null;
   }
 }
