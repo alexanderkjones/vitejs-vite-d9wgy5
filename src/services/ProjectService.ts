@@ -1,6 +1,6 @@
 import { doc, getDoc, getDocs, setDoc, query, where, deleteDoc } from "@firebase/firestore";
 import { createCollection } from "../firebase.js";
-import { createGithubRepoForAuthenticated } from "../services/GithubService";
+import { createGithubRepoForAuthenticated, getGithubRepoTree } from "../services/GithubService";
 
 import { IProject } from "../types/Project";
 
@@ -45,4 +45,13 @@ export async function updateProject(id: string, data: IProject) {}
 export async function deleteProjectByUID(uid: string): Promise<void> {
   const projectDocRef = doc(projectCollection, uid);
   const projectDoc = await deleteDoc(projectDocRef);
+}
+
+// Files
+
+export async function getProjectFiles(project: IProject, branch: string) {
+  const fileTree = await getGithubRepoTree(project.repo.owner, project.repo.name, "main");
+  const files = [];
+
+  console.log(fileTree);
 }

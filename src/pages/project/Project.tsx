@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useParams } from "react-router-dom";
 import { IProject } from "../../types/Project";
-import { getProjectByUID } from "../../services/ProjectService";
+import { getProjectByUID, getProjectFiles } from "../../services/ProjectService";
 import NavBar from "../../components/NavBar";
 
 // MUI
@@ -30,6 +30,7 @@ export default function Project() {
       if (!projectID) return;
       const project = await getProjectByUID(projectID);
       setCurrentProject(project);
+      getProjectFiles(project, "main");
     };
 
     getProject(projectID);

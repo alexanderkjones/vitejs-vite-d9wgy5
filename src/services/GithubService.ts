@@ -1,6 +1,6 @@
 import React from "react";
 import { Octokit } from "@octokit/rest";
-import { GithubUser, GithubUserAuthenticated, GithubRepository, GithubRepositoryAuthenticatedUser } from "../types/Github";
+import { GithubUser, GithubUserAuthenticated, GithubRepository, GithubRepositoryAuthenticatedUser, GithubTree } from "../types/Github";
 
 const TOKEN_KEY = import.meta.env.VITE_LOCAL_STORAGE_GITHUB_ACCESS_TOKEN_KEY;
 
@@ -51,6 +51,13 @@ export async function createGithubRepoForAuthenticated(name: string, isPrivate: 
   }
 }
 
-export async function getGithubRepositoriesByUsername(username: string) {}
-
-export async function getGithubRepository(owner: string, repoName: string) {}
+export async function getGithubRepoTree(owner: string, repo: string, branch: string): Promise<GithubTree> {
+  const ref = "heads/" + branch;
+  const parent = await octokit.rest.git.getRef({ owner, repo, ref });
+  const commit_sha = parent.data.object.sha;
+  const latestCommit = await octokit.rest.git.getCommit({ owner, repo, commit_sha });
+  const tree_sha = latestCommit.data.tree.sha;
+  const recursive = "true";
+  const currentTree = await octokit.rest.git.getTree({ owner, repo, tree_sha, recursive });
+  return currentTree;
+}
