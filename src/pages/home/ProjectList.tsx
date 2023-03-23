@@ -13,26 +13,30 @@ import TableRow from "@mui/material/TableRow";
 
 type ProjectListProps = {
   projectList: IProject[];
-  setSelected: (project: IProject) => void;
+  setSelectedProject: (project: IProject) => void;
 };
 
-export default function ProjectList({ projectList, setSelected }: ProjectListProps) {
+export default function ProjectList({ projectList, setSelectedProject }: ProjectListProps) {
   return (
     <TableContainer component={Box}>
       <Table sx={{ minWidth: 650 }} aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell align="left">Title</TableCell>
+            <TableCell align="left" width={200}>
+              Title
+            </TableCell>
             <TableCell align="left">Description</TableCell>
-            <TableCell align="left">Updated</TableCell>
+            <TableCell align="left" width={200}>
+              Updated
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {projectList.map((project) => (
             <TableRow
               hover={true}
-              onClick={() => setSelected(project)}
-              key={project.title}
+              onClick={() => setSelectedProject(project)}
+              key={project.uid}
               sx={{
                 "&:last-child td, &:last-child th, c": { border: 0 },
                 "&:hover": {

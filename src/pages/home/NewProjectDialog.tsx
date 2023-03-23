@@ -23,19 +23,16 @@ export default function NewProjectFormDialog({ open, setOpen, handleCreateNewPro
   const handleTitleOnChange = (textfield: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     const text = textfield.target.value;
     setTitle(text);
-    console.log(text);
   };
 
   const handleDescriptionOnChange = (textfield: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     const text = textfield.target.value;
     setDescription(text);
-    console.log(text);
   };
 
   const handleCreate = () => {
     if (!title || !description) return;
     handleCreateNewProject(title, description);
-    console.log("CREATE!");
   };
 
   return (
