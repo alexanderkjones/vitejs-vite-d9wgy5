@@ -10,11 +10,20 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import SaveIcon from "@mui/icons-material/Save";
+import FileBrowser from "./FileBrowser";
 
 export default function Project() {
   const { currentUser } = useAuth();
   const { projectID } = useParams();
   const [currentProject, setCurrentProject] = useState<IProject | null>(null);
+  const [editableProject, setEditableProject] = useState<boolean>(false);
+  const [openFileBrowser, setOpenFileBrowser] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (currentProject && currentUser && currentProject.userUID == currentUser.uid) {
+      setEditableProject(true);
+    }
+  }, [currentUser, currentProject]);
 
   useEffect(() => {
     const getProject = async (projectID: string | undefined) => {
@@ -29,13 +38,16 @@ export default function Project() {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <NavBar>
-        <Button variant="contained" size="small" startIcon={<SaveIcon />}>
-          Save
-        </Button>
+        {editableProject && (
+          <Button variant="contained" size="small" startIcon={<SaveIcon />}>
+            Save
+          </Button>
+        )}
         <Box sx={{ flexGrow: 1 }}>
           <Typography align="center">{currentProject && currentProject.title + " : " + currentProject.uid}</Typography>
         </Box>
       </NavBar>
+      {editableProject && openFileBrowser && <FileBrowser />}
     </Box>
   );
 }

@@ -12,6 +12,7 @@
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@mui/icons-material": "^5.11.11",
+    "@mui/lab": "*",
     "@mui/material": "^5.11.13",
     "@octokit/rest": "^19.0.7",
     "@octokit/types": "^9.0.0",
