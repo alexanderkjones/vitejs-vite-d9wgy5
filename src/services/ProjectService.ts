@@ -46,12 +46,3 @@ export async function deleteProjectByUID(uid: string): Promise<void> {
   const projectDocRef = doc(projectCollection, uid);
   const projectDoc = await deleteDoc(projectDocRef);
 }
-
-// Files
-
-export async function getProjectFiles(project: IProject, branch: string) {
-  const fileTree = await getGithubRepoTree(project.repo.owner, project.repo.name, "main");
-  const files = [];
-
-  console.log(fileTree);
-}

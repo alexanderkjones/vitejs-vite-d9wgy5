@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useParams } from "react-router-dom";
 import { IProject } from "../../types/Project";
-import { getProjectByUID, getProjectFiles } from "../../services/ProjectService";
+import { getProjectByUID } from "../../services/ProjectService";
+import { getFilesFromProject } from "../../services/FileService";
+import { IFolderNode, IFileNode } from "../../types/Files";
 import NavBar from "../../components/NavBar";
 
 // MUI
@@ -18,6 +20,7 @@ export default function Project() {
   const [currentProject, setCurrentProject] = useState<IProject | null>(null);
   const [editableProject, setEditableProject] = useState<boolean>(false);
   const [openFileBrowser, setOpenFileBrowser] = useState<boolean>(true);
+  const [projectFiles, setProjectFiles] = useState<IFolderNode | IFolderNode | null>(null);
 
   useEffect(() => {
     if (currentProject && currentUser && currentProject.userUID == currentUser.uid) {
@@ -30,7 +33,9 @@ export default function Project() {
       if (!projectID) return;
       const project = await getProjectByUID(projectID);
       setCurrentProject(project);
-      getProjectFiles(project, "main");
+      if (!project) return;
+      const projectFiles = await getFilesFromProject(project, "main");
+      setProjectFiles(projectFiles);
     };
 
     getProject(projectID);
@@ -48,7 +53,7 @@ export default function Project() {
           <Typography align="center">{currentProject && currentProject.title + " : " + currentProject.uid}</Typography>
         </Box>
       </NavBar>
-      {editableProject && openFileBrowser && <FileBrowser />}
+      {editableProject && openFileBrowser &&  projectFiles && <FileBrowser data={projectFiles} />}
     </Box>
   );
 }
