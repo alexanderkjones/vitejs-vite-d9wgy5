@@ -1,14 +1,159 @@
 import { getGithubRepoTree } from "../services/GithubService";
+import { GithubTree } from "../types/Github";
 import { IProject } from "../types/Project";
-import { IFileNode, IFolderNode } from "../types/Files";
+import { IFileTree, IFile, IFolder } from "../types/Files";
 
-export async function getFilesFromProject(project: IProject, branch: string) {
-  const fileTree = await getGithubRepoTree(project.repo.owner, project.repo.name, "main");
-  return createTree(fileTree);
+const fileTree: IFileTree = {
+  tree: {
+    name: "",
+    path: "",
+    type: "root",
+    children: [],
+  },
+  newFiles: {},
+  newFolders: {},
+  modifiedFiles: {},
+  removedFiles: {},
+  removedFolders: {},
+};
+
+export async function getFiles(project: IProject, branch: string = "main") {
+  fileTree.tree = getFilesfromGithubTree(project, branch);
 }
 
-function createTree(data: any): IFolderNode {
-  const root: IFolderNode = {
+export async function getFile(item: IFile, project: IProject) {
+  if (fileTree.newFiles[item.path]) return fileTree.newFiles[item.path];
+  if (fileTree.modifiedFiles[item.path]) return fileTree.modifiedFiles[item.path];
+
+  const retrieved = getFileFolderOrParentFromTree(item);
+  if (retrieved) {
+    const content = await getFileContentsFromGithub(project, item);
+    return { ...item, content: content };
+  }
+}
+
+export function updateFile(item: IFile) {
+  if (fileTree.newFiles[item.path]) {
+    fileTree.newFiles[item.path].content = item.content;
+    return;
+  }
+  if (fileTree.modifiedFiles[item.path]) {
+    fileTree.modifiedFiles[item.path].content = item.content;
+    return;
+  }
+
+  const retrieved = getFileFolderOrParentFromTree(item);
+  if (retrieved && retrieved.type === "file") {
+    retrieved.modified = true;
+    fileTree.modifiedFiles[retrieved.path] = { ...retrieved, content: item.content };
+  }
+}
+
+export function addFileOrFolder(item: IFile | IFolder): IFile | IFolder {
+  let newItem;
+  if (item.type && item.type === "file") {
+    newItem = fileTree.newFiles[item.path] ?? (fileTree.newFiles[item.path] = item);
+  }
+
+  if (item.type && item.type === "folder") {
+    newItem = fileTree.newFolders[item.path] ?? (fileTree.newFolders[item.path] = item);
+  }
+
+  const parent = getFileFolderOrParentFromTree(newItem, true);
+
+  if (parent && newItem && parent.type === "folder") {
+    parent.children.push(newItem);
+    parent.children.sort(compareFilesOrFoldersByName);
+  }
+
+  return newItem;
+}
+
+export function removeFileOrFolder(item: IFile | IFolder) {
+  let removedItem: IFile | IFolder;
+
+  if (item.type && item.type === "file") {
+    removedItem = fileTree.removedFiles[item.path] = item;
+    if (fileTree.newFiles[item.path]) delete fileTree.newFiles[item.path];
+    if (fileTree.modifiedFiles[item.path]) delete fileTree.modifiedFiles[item.path];
+  }
+
+  if (item.type && item.type === "folder") {
+    removedItem = fileTree.removedFolders[item.path] = item;
+    for (const child of item.children) {
+      removeFileOrFolder(child);
+    }
+    if (fileTree.newFolders[item.path]) delete fileTree.newFolders[item.path];
+  }
+
+  const parent = getFileFolderOrParentFromTree(item, true);
+
+  if (parent && parent.type === "folder") {
+    const index = parent.children.findIndex((i) => i.name === removedItem.name);
+    if (index !== -1) {
+      parent.children.splice(index, 1);
+    }
+  }
+}
+
+function moveFileOrFolder(item: IFile | IFolder, newParent: IFolder) {
+  if (item.type === "file") {
+    addFileOrFolder({ ...item, path: newParent.path + "/" + item.name });
+    removeFileOrFolder(item);
+    return;
+  }
+
+  if (item.type == "folder") {
+    const newFolder = addFileOrFolder({ ...item, path: newParent.path + "/" + item.name });
+    for (const child of item.children) {
+      moveFileOrFolder(child, newFolder);
+    }
+    removeFileOrFolder(item);
+  }
+}
+
+function renameFileOrFolder(item: IFile | IFolder, newName: string) {
+  const path = item.path.split("/");
+  const newPath = path.slice(0, -1).concat(newName).join("/");
+
+  if (item.type === "file") {
+    addFileOrFolder({ ...item, path: newPath });
+    removeFileOrFolder(item);
+    return;
+  }
+
+  if (item.type == "folder") {
+    const newFolder = addFileOrFolder({ ...item, path: newPath });
+    for (const child of item.children) {
+      moveFileOrFolder(child, newFolder);
+    }
+    removeFileOrFolder(item);
+  }
+}
+
+function getFileFolderOrParentFromTree(f: IFile | IFolder, getParent: boolean = false) {
+  const path = f.path.split("/");
+  const target = path.pop();
+  let pointer = fileTree.tree?.children;
+  for (const name of path) {
+    const match = pointer?.find((child) => child.name === name);
+    pointer = match?.children;
+  }
+  return pointer?.find((child) => child.name === target);
+}
+
+// export async function getFilesFromProject(project: IProject, branch: string) {
+//   const fileTree = await getGithubRepoTree(project.repo.owner, project.repo.name, "main");
+//   return createTree(fileTree);
+// }
+
+// export function commitFiles(){
+
+// }
+
+async function getFilesfromGithubTree(project: IProject, branch: string = "main"): IFolder {
+  const data = await getGithubRepoTree(project.repo.owner, project.repo.name, branch);
+  const root: IFolder = {
     name: "",
     path: "",
     type: "root",
@@ -16,10 +161,10 @@ function createTree(data: any): IFolderNode {
   };
 
   // Map of folder paths to their corresponding folder nodes
-  const folderNodes: Record<string, IFolderNode> = {};
+  const folderNodes: Record<string, IFolder> = {};
 
   // Map of file paths to their corresponding file nodes
-  const fileNodes: Record<string, IFileNode> = {};
+  const fileNodes: Record<string, IFile> = {};
 
   // Add all folders to folderNodes
   data.data.tree
@@ -27,7 +172,7 @@ function createTree(data: any): IFolderNode {
     .forEach((node: any) => {
       const folderPath = node.path;
       const folderName = folderPath.split("/").pop() as string;
-      const folderNode: IFolderNode = {
+      const folderNode: IFolder = {
         name: folderName,
         path: folderPath,
         type: "folder",
@@ -51,10 +196,11 @@ function createTree(data: any): IFolderNode {
     .forEach((node: any) => {
       const filePath = node.path;
       const fileName = filePath.split("/").pop() as string;
-      const fileNode: IFileNode = {
+      const fileNode: IFile = {
         name: fileName,
         path: filePath,
         type: "file",
+        modified: false,
       };
 
       fileNodes[filePath] = fileNode;
@@ -69,4 +215,14 @@ function createTree(data: any): IFolderNode {
     });
 
   return root;
+}
+
+function compareFilesOrFoldersByName(a: IFile | IFolder, b: IFile | IFolder) {
+  if (a.name < b.name) {
+    return -1;
+  } else if (a.name > b.name) {
+    return 1;
+  } else {
+    return 0;
+  }
 }

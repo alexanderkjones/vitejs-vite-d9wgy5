@@ -1,5 +1,6 @@
-import React, { useState, MouseEvent } from "react";
+import React, { useState, useEffect, MouseEvent } from "react";
 import { IFolderNode, IFileNode } from "../../types/Files";
+import { getFilesFromProject } from "../../services/FileService";
 
 // MUI
 import { styled } from "@mui/material/styles";
@@ -17,8 +18,11 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import NoteAddOutlinedIcon from "@mui/icons-material/NoteAddOutlined";
 import CreateNewFolderOutlinedIcon from "@mui/icons-material/CreateNewFolderOutlined";
+import ModeEditOutlineOutlinedIcon from "@mui/icons-material/ModeEditOutlineOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 
 import { SvgIconProps } from "@mui/material/SvgIcon";
+import { IProject } from "../../types/Project";
 
 declare module "react" {
   interface CSSProperties {
@@ -39,30 +43,6 @@ type StyledTreeItemProps = TreeItemProps & {
 
 const StyledTreeItemRoot = styled(TreeItem)(({ theme }) => ({
   color: theme.palette.text.secondary,
-  // [`& .${treeItemClasses.content}`]: {
-  //   color: theme.palette.text.secondary,
-  //   paddingRight: theme.spacing(1),
-  //   fontWeight: theme.typography.fontWeightMedium,
-  //   "&.Mui-expanded": {
-  //     fontWeight: theme.typography.fontWeightRegular,
-  //   },
-  //   "&:hover": {
-  //     backgroundColor: theme.palette.action.hover,
-  //   },
-  //   "&.Mui-focused, &.Mui-selected, &.Mui-selected.Mui-focused": {
-  //     backgroundColor: `var(--tree-view-bg-color, ${theme.palette.action.selected})`,
-  //     color: "var(--tree-view-color)",
-  //   },
-  //   [`& .${treeItemClasses.label}`]: {
-  //     fontWeight: "inherit",
-  //     color: "inherit",
-  //   },
-  // },
-  // [`& .${treeItemClasses.group}`]: {
-  //   [`& .${treeItemClasses.content}`]: {
-  //     paddingLeft: theme.spacing(2),
-  //   },
-  // },
 }));
 
 function StyledTreeItem(props: StyledTreeItemProps) {
@@ -70,7 +50,6 @@ function StyledTreeItem(props: StyledTreeItemProps) {
   const [isHover, setIsHover] = useState<boolean>(false);
 
   const handleMouseEnter = (event: MouseEvent) => {
-    console.log(filePath);
     setIsHover(true);
   };
 
@@ -79,12 +58,15 @@ function StyledTreeItem(props: StyledTreeItemProps) {
   };
 
   const onClickHandler = (event: MouseEvent) => {
-    console.log(event.currentTarget.getAttribute("data-test"));
-    const parentNode = event.currentTarget;
-    // if (parentNode instanceof Element) {
-    //   console.log(parentNode.getAttribute());
-    // }
     event.stopPropagation();
+    switch (event.currentTarget.getAttribute("name")) {
+      case "newFile": {
+        break;
+      }
+      case "newFolder": {
+        break;
+      }
+    }
   };
 
   return (
@@ -100,12 +82,15 @@ function StyledTreeItem(props: StyledTreeItemProps) {
           </Typography>
           {isHover && fileType === "file" ? (
             <Box data-type={fileType} data-path={filePath}>
-              <Box onClick={onClickHandler} component={NoteAddOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
-              <Box onClick={onClickHandler} component={CreateNewFolderOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
+              <Box onClick={onClickHandler} name="edit" component={ModeEditOutlineOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
+              <Box onClick={onClickHandler} name="delete" component={DeleteOutlineOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
             </Box>
           ) : isHover && fileType === "folder" ? (
             <Box data-type={fileType} data-path={filePath}>
-              <Box onClick={onClickHandler} component={CreateNewFolderOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
+              <Box onClick={onClickHandler} name="newFile" component={NoteAddOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 15 }} />
+              <Box onClick={onClickHandler} name="newFolder" component={CreateNewFolderOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
+              <Box onClick={onClickHandler} name="edit" component={ModeEditOutlineOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
+              <Box onClick={onClickHandler} name="delete" component={DeleteOutlineOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
             </Box>
           ) : (
             <React.Fragment />
@@ -122,13 +107,29 @@ function StyledTreeItem(props: StyledTreeItemProps) {
 }
 
 interface FileBrowserProps {
-  data: IFileNode | IFolderNode;
+  project: IProject | null;
 }
 
-export default function FileBrowser({ data }: FileBrowserProps) {
+export default function FileBrowser({ project }: FileBrowserProps) {
+  const [projectFiles, setProjectFiles] = useState<IFolderNode | IFileNode | null>(null);
+
+  useEffect(() => {
+    const getFiles = async (p: IProject | null) => {
+      if (!p) return;
+      const projectFiles = await getFilesFromProject(p, "main");
+      setProjectFiles(projectFiles);
+    };
+
+    getFiles(project);
+  }, []);
+
   let nodeIdCounter = 0;
-  const renderTree = (treeData: IFileNode | IFolderNode) => {
+
+  const renderTree = (treeData: IFileNode | IFolderNode | null) => {
+    if (!treeData) return;
+
     const nodeId = nodeIdCounter++;
+
     if (treeData.type === "file") {
       return <StyledTreeItem nodeId={nodeId.toString()} labelText={treeData.name} fileType={treeData.type} filePath={treeData.path} labelIcon={DescriptionOutlinedIcon} bgColor="#e8f0fe" />;
     } else {
@@ -153,51 +154,7 @@ export default function FileBrowser({ data }: FileBrowserProps) {
       defaultEndIcon={<div style={{ width: 24 }} />}
       sx={{ height: 264, flexGrow: 1, maxWidth: 275, overflowY: "auto" }}
     >
-      {renderTree(data)}
+      {renderTree(projectFiles)}
     </TreeView>
   );
-
-  // return (
-  //   <TreeView
-  //     aria-label="gmail"
-  //     defaultExpanded={["3"]}
-  //     defaultCollapseIcon={<ExpandMoreIcon />}
-  //     defaultExpandIcon={<ChevronRightIcon />}
-  //     defaultEndIcon={<div style={{ width: 24 }} />}
-  //     sx={{ height: 264, flexGrow: 1, maxWidth: 275, overflowY: "auto" }}
-  //   >
-  //     <StyledTreeItem nodeId="1" labelText="All Mail" labelIcon={MailIcon} bgColor="#e8f0fe" />
-  //     <StyledTreeItem nodeId="2" labelText="Trash" labelIcon={DeleteIcon} bgColor="#e8f0fe" />
-  //     <StyledTreeItem nodeId="3" labelText="Categories" labelIcon={SaveIcon} bgColor="#e8f0fe">
-  //       <StyledTreeItem nodeId="5" labelText="Social" labelIcon={SupervisorAccountIcon} color="#1a73e8" bgColor="#e8f0fe" />
-  //       <StyledTreeItem nodeId="6" labelText="Updates" labelIcon={InfoIcon} color="#e3742f" bgColor="#fcefe3" />
-  //       <StyledTreeItem nodeId="7" labelText="Forums" labelIcon={ForumIcon} color="#a250f5" bgColor="#f3e8fd" />
-  //       <StyledTreeItem nodeId="8" labelText="Promotions" labelIcon={LocalOfferIcon} color="#3c8039" bgColor="#e6f4ea" />
-  //     </StyledTreeItem>
-  //     <StyledTreeItem nodeId="4" labelText="History" labelIcon={Label} />
-  //   </TreeView>
-  // );
 }
-
-// const FolderTree: React.FC<Props> = ({ data }) => {
-//   const renderTree = (treeData: FileOrFolder) => {
-//     if (treeData.type === "file") {
-//       return <li>{treeData.name}</li>;
-//     } else {
-//       return (
-//         <li>
-//           {treeData.name}
-//           <ul>
-//             {treeData.children
-//               .sort((a, b) => a.name.localeCompare(b.name)) // Sort the children alphabetically
-//               .map((child) => (
-//                 <React.Fragment key={child.name}>{renderTree(child)}</React.Fragment>
-//               ))}
-//           </ul>
-//         </li>
-//       );
-//     }
-//   };
-
-//   return <ul>{renderTree(data)}</ul>;
-// };
