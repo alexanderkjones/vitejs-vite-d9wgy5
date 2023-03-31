@@ -68,5 +68,5 @@ export default function Home() {
     </Box>
   );
 
-  return selectedProject ? <Navigate to={"/" + selectedProject.uid} /> : content;
+  return selectedProject ? <Navigate to={"/" + selectedProject.uid + "/edit"} /> : content;
 }

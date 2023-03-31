@@ -4,12 +4,7 @@ import { IProject } from "../types/Project";
 import { IFileTree, IFile, IFolder } from "../types/Files";
 
 const fileTree: IFileTree = {
-  tree: {
-    name: "",
-    path: "",
-    type: "root",
-    children: [],
-  },
+  tree: {} as IFolder,
   newFiles: {},
   newFolders: {},
   modifiedFiles: {},
@@ -17,46 +12,51 @@ const fileTree: IFileTree = {
   removedFolders: {},
 };
 
-export async function getFiles(project: IProject, branch: string = "main") {
-  fileTree.tree = getFilesfromGithubTree(project, branch);
+export async function initializeFileTree(project: IProject, branch: string = "main") {
+  fileTree.tree = await getFilesfromGithubTree(project, branch);
+  return fileTree.tree;
 }
 
-export async function getFile(item: IFile, project: IProject) {
+export function getFileTree(): IFolder {
+  return fileTree.tree;
+}
+
+export async function openFile(item: IFile) {
   if (fileTree.newFiles[item.path]) return fileTree.newFiles[item.path];
   if (fileTree.modifiedFiles[item.path]) return fileTree.modifiedFiles[item.path];
 
   const retrieved = getFileFolderOrParentFromTree(item);
-  if (retrieved) {
-    const content = await getFileContentsFromGithub(project, item);
-    return { ...item, content: content };
-  }
+  if (retrieved && retrieved.content) return retrieved;
+
+  const content = await getFileContentsFromGithub(project, item);
+  content ? (item.content = content) : null;
+  return retrieved;
 }
 
-export function updateFile(item: IFile) {
+export function updateFile(item: IFile, content: string) {
   if (fileTree.newFiles[item.path]) {
-    fileTree.newFiles[item.path].content = item.content;
+    fileTree.newFiles[item.path].content = content;
     return;
   }
   if (fileTree.modifiedFiles[item.path]) {
-    fileTree.modifiedFiles[item.path].content = item.content;
+    fileTree.modifiedFiles[item.path].content = content;
     return;
   }
 
   const retrieved = getFileFolderOrParentFromTree(item);
   if (retrieved && retrieved.type === "file") {
     retrieved.modified = true;
-    fileTree.modifiedFiles[retrieved.path] = { ...retrieved, content: item.content };
+    retrieved.content = content;
+    fileTree.modifiedFiles[retrieved.path] = retrieved;
   }
 }
 
 export function addFileOrFolder(item: IFile | IFolder): IFile | IFolder {
   let newItem;
-  if (item.type && item.type === "file") {
-    newItem = fileTree.newFiles[item.path] ?? (fileTree.newFiles[item.path] = item);
-  }
-
-  if (item.type && item.type === "folder") {
-    newItem = fileTree.newFolders[item.path] ?? (fileTree.newFolders[item.path] = item);
+  if (item.type === "file") {
+    newItem = fileTree.newFiles[item.path] = item;
+  } else {
+    newItem = fileTree.newFolders[item.path] = item;
   }
 
   const parent = getFileFolderOrParentFromTree(newItem, true);
@@ -96,7 +96,7 @@ export function removeFileOrFolder(item: IFile | IFolder) {
   }
 }
 
-function moveFileOrFolder(item: IFile | IFolder, newParent: IFolder) {
+export function moveFileOrFolder(item: IFile | IFolder, newParent: IFolder) {
   if (item.type === "file") {
     addFileOrFolder({ ...item, path: newParent.path + "/" + item.name });
     removeFileOrFolder(item);
@@ -112,7 +112,7 @@ function moveFileOrFolder(item: IFile | IFolder, newParent: IFolder) {
   }
 }
 
-function renameFileOrFolder(item: IFile | IFolder, newName: string) {
+export function renameFileOrFolder(item: IFile | IFolder, newName: string) {
   const path = item.path.split("/");
   const newPath = path.slice(0, -1).concat(newName).join("/");
 
@@ -177,6 +177,7 @@ async function getFilesfromGithubTree(project: IProject, branch: string = "main"
         path: folderPath,
         type: "folder",
         children: [],
+        open: false,
       };
 
       folderNodes[folderPath] = folderNode;
@@ -201,6 +202,7 @@ async function getFilesfromGithubTree(project: IProject, branch: string = "main"
         path: filePath,
         type: "file",
         modified: false,
+        open: false,
       };
 
       fileNodes[filePath] = fileNode;

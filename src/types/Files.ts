@@ -1,5 +1,5 @@
 export interface IFileTree {
-  tree: IFolder | null;
+  tree: IFolder;
   newFiles: { [key: string]: IFile };
   newFolders: { [key: string]: IFolder };
   modifiedFiles: { [key: string]: IFile };
@@ -13,6 +13,7 @@ export interface IFile {
   type: "file";
   content?: string;
   modified: boolean;
+  open: boolean;
 }
 
 export interface IFolder {
@@ -20,4 +21,5 @@ export interface IFolder {
   path: string;
   type: "folder" | "root";
   children: (IFolder | IFile)[];
+  open: boolean;
 }

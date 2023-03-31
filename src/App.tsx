@@ -6,7 +6,7 @@ import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 
 import Home from "./pages/home/Home";
-import Project from "./pages/project/Project";
+import Editor from "./pages/editor/Editor";
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/:projectID" element={<Project />} />
+            <Route path="/:projectID/edit" element={<Editor />} />
           </Routes>
         </AuthProvider>
       </Router>
