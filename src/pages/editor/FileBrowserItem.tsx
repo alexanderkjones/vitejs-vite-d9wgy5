@@ -23,26 +23,21 @@ interface FileBrowserItemProps {
   nodeId: string;
   item: IFile | IFolder;
   children?: React.ReactNode;
-  // add more props as needed
 }
 
 export default function FileBrowserItem({ nodeId, item, children }: FileBrowserItemProps) {
-  const { addFile, renameFile, moveFile, deleteFile, addFolder, renameFolder, deleteFolder } = useFiles();
   const [isHover, setIsHover] = useState<boolean>(false);
   const [newName, setNewName] = useState(item.name);
   const [isRenaming, setIsRenaming] = useState(false);
+  const { handleFileOpen, handleFileClose, handleFolderOpen, handleFolderClose, addFile, renameFile, moveFile, deleteFile, addFolder, renameFolder, deleteFolder } = useFiles();
 
   const textColorClosed = "#000000";
   const textColorOpened = "#FFFFFF";
 
   const getItemIcon = (item: IFile | IFolder) => {
-    if (item.type === "folder" && !item.open) return FolderIcon;
-    if (item.type === "folder" && item.open) return FolderOpenIcon;
-    switch (item.name.split(".").pop()) {
-      default: {
-        return DescriptionOutlinedIcon;
-      }
-    }
+    if (item.type === "root") return;
+    if (item.type === "folder") return item.open ? FolderOpenIcon : FolderIcon;
+    if (item.type === "file") return DescriptionOutlinedIcon;
   };
 
   const handleMouseEnter: MouseEventHandler<HTMLDivElement> = (event) => {
@@ -51,6 +46,10 @@ export default function FileBrowserItem({ nodeId, item, children }: FileBrowserI
 
   const handleMouseOut: MouseEventHandler<HTMLDivElement> = (event) => {
     setIsHover(false);
+  };
+
+  const handleRename: MouseEventHandler<HTMLDivElement> = (event) => {
+    event.stopPropagation();
   };
 
   return (
@@ -84,15 +83,69 @@ export default function FileBrowserItem({ nodeId, item, children }: FileBrowserI
           )}
           {!isRenaming && isHover && item.type === "file" ? (
             <Box>
-              <Box onClick={() => setIsRenaming(true)} name="renameFile" component={ModeEditOutlineOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
-              <Box onClick={() => deleteFile(item)} name="deleteFile" component={DeleteOutlineOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsRenaming(true);
+                }}
+                name="renameFile"
+                component={ModeEditOutlineOutlinedIcon}
+                color="inherit"
+                sx={{ mr: 1, fontSize: 16 }}
+              />
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteFile(item);
+                }}
+                name="deleteFile"
+                component={DeleteOutlineOutlinedIcon}
+                color="inherit"
+                sx={{ mr: 1, fontSize: 16 }}
+              />
             </Box>
           ) : !isRenaming && isHover && item.type === "folder" ? (
             <Box>
-              <Box onClick={() => addFile(item)} name="newFile" component={NoteAddOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 15 }} />
-              <Box onClick={() => addFolder(item)} name="newFolder" component={CreateNewFolderOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
-              <Box onClick={() => setIsRenaming(true)} name="renameFolder" component={ModeEditOutlineOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
-              <Box onClick={() => deleteFolder(item)} name="deleteFolder" component={DeleteOutlineOutlinedIcon} color="inherit" sx={{ mr: 1, fontSize: 16 }} />
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addFile(item);
+                }}
+                name="newFile"
+                component={NoteAddOutlinedIcon}
+                color="inherit"
+                sx={{ mr: 1, fontSize: 15 }}
+              />
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addFolder(item);
+                }}
+                name="newFolder"
+                component={CreateNewFolderOutlinedIcon}
+                color="inherit"
+                sx={{ mr: 1, fontSize: 16 }}
+              />
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsRenaming(true);
+                }}
+                name="renameFolder"
+                component={ModeEditOutlineOutlinedIcon}
+                color="inherit"
+                sx={{ mr: 1, fontSize: 16 }}
+              />
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteFolder(item);
+                }}
+                name="deleteFolder"
+                component={DeleteOutlineOutlinedIcon}
+                color="inherit"
+                sx={{ mr: 1, fontSize: 16 }}
+              />
             </Box>
           ) : (
             <React.Fragment />

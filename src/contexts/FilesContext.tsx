@@ -11,6 +11,8 @@ interface IFilesContext {
   initFileTree: (project: IProject) => void;
   handleFileOpen: (item: IFile) => void;
   handleFileClose: (item: IFile) => void;
+  handleFolderOpen: (item: IFolder) => void;
+  handleFolderClose: (item: IFolder) => void;
   addFile: (item: IFile) => void;
   moveFile: (item: IFile, newParen: IFolder) => void;
   renameFile: (item: IFile, newName: string) => void;
@@ -28,6 +30,8 @@ const FilesContext = createContext<IFilesContext>({
   initFileTree: () => {},
   handleFileOpen: () => {},
   handleFileClose: () => {},
+  handleFolderOpen: () => {},
+  handleFolderClose: () => {},
   addFile: () => {},
   moveFile: () => {},
   renameFile: () => {},
@@ -54,6 +58,16 @@ export function FilesProvider({ children }: { children: ReactNode }) {
       setOpenFiles([...openFiles, item]);
     }
     setSelectedFile(item);
+    setFiles(getFileTree());
+  };
+
+  const handleFolderOpen = (item: IFolder) => {
+    item.open = true;
+    setFiles(getFileTree());
+  };
+
+  const handleFolderClose = (item: IFolder) => {
+    item.open = false;
     setFiles(getFileTree());
   };
 
@@ -116,6 +130,8 @@ export function FilesProvider({ children }: { children: ReactNode }) {
     initFileTree,
     handleFileOpen,
     handleFileClose,
+    handleFolderOpen,
+    handleFolderClose,
     addFile,
     moveFile,
     renameFile,
