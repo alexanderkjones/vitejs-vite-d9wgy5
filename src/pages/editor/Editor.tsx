@@ -7,6 +7,7 @@ import { getProjectByUID } from "../../services/ProjectService";
 
 import EditorNavBar from "./EditorNavBar";
 import FileBrowser from "./FileBrowser";
+import FileTabPanel from "./FileTabPanel";
 
 // MUI
 import Box from "@mui/material/Box";
@@ -38,7 +39,13 @@ export default function Editor() {
     <FilesProvider>
       <Box sx={{ flexGrow: 1 }}>
         <EditorNavBar project={currentProject} />
-        {editableProject && openFileBrowser && <FileBrowser project={currentProject} />}
+        <Box sx={{ flexDirection: "row", display: "flex" }}>
+          {editableProject && openFileBrowser && <FileBrowser project={currentProject} />}
+          <Box sx={{ flexDirection: "column", display: "flex" }}>
+            {editableProject && <FileTabPanel />}
+            {/* {editableProject && <FileContent />} */}
+          </Box>
+        </Box>
       </Box>
     </FilesProvider>
   );
