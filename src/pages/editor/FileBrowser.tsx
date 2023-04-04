@@ -19,6 +19,15 @@ interface FileBrowserProps {
 
 export default function FileBrowser({ project }: FileBrowserProps) {
   const { initFileTree, files } = useFiles();
+  const [expanded, setExpanded] = useState<string[]>([]);
+
+  const handleToggle = (event: React.SyntheticEvent, nodeIds: string[]) => {
+    setExpanded(nodeIds);
+  };
+
+  const handleExpandItem = (nodeId: string, value: boolean) => {
+    value ? setExpanded([...expanded, nodeId]) : setExpanded((prevNodes) => prevNodes.filter((node) => node !== nodeId));
+  };
 
   useEffect(() => {
     const initialize = async () => {
@@ -32,10 +41,10 @@ export default function FileBrowser({ project }: FileBrowserProps) {
   const renderFiles = (item: IFolder | IFile) => {
     const itemId = itemCounter++;
     if (item.type === "file") {
-      return <FileBrowserItem nodeId={itemId.toString()} item={item} />;
+      return <FileBrowserItem nodeId={item.path || ""} item={item} expanded={expanded.includes(item.path)} handleExpandItem={handleExpandItem} />;
     } else {
       return (
-        <FileBrowserItem nodeId={itemId.toString()} item={item}>
+        <FileBrowserItem nodeId={item.path || ""} item={item} expanded={expanded.includes(item.path)} handleExpandItem={handleExpandItem}>
           {item.children &&
             item.children
               .sort((a, b) => a.name.localeCompare(b.name)) // Sort the children alphabetically
@@ -50,10 +59,11 @@ export default function FileBrowser({ project }: FileBrowserProps) {
       {files ? (
         <TreeView
           aria-label="FileBrowser"
-          defaultExpanded={["3"]}
           defaultCollapseIcon={<ExpandMoreIcon />}
           defaultExpandIcon={<ChevronRightIcon />}
           defaultEndIcon={<div style={{ width: 24 }} />}
+          expanded={expanded}
+          onNodeToggle={handleToggle}
           sx={{ height: 264, flexGrow: 1, maxWidth: 275, overflowY: "auto" }}
         >
           {renderFiles(files)}

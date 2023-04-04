@@ -1,7 +1,18 @@
-import React, { useState, createContext, useContext, ReactNode } from "react";
+import React, { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { IFile, IFolder } from "../types/Files";
 import { IProject } from "../types/Project";
-import { initializeFileTree, getFileTree, addFileOrFolder, renameFileOrFolder, moveFileOrFolder, removeFileOrFolder } from "../services/FileService";
+import {
+  initializeFileTree,
+  getFileTree,
+  addFile as _addFile,
+  addFolder as _addFolder,
+  removeFile as _removeFile,
+  removeFolder as _removeFolder,
+  renameFile as _renameFile,
+  renameFolder as _renameFolder,
+  moveFile as _moveFile,
+  moveFolder as _moveFolder,
+} from "../services/FileService";
 import { IpcNetConnectOpts } from "net";
 
 interface IFilesContext {
@@ -13,11 +24,11 @@ interface IFilesContext {
   handleFileClose: (item: IFile) => void;
   handleFolderOpen: (item: IFolder) => void;
   handleFolderClose: (item: IFolder) => void;
-  addFile: (item: IFile) => void;
+  addFile: (destination: IFolder) => void;
   moveFile: (item: IFile, newParen: IFolder) => void;
   renameFile: (item: IFile, newName: string) => void;
   deleteFile: (item: IFile) => void;
-  addFolder: (item: IFolder) => void;
+  addFolder: (destination: IFolder) => void;
   moveFolder: (item: IFolder, newParent: IFolder) => void;
   renameFolder: (item: IFolder, newName: string) => void;
   deleteFolder: (item: IFolder) => void;
@@ -49,7 +60,7 @@ export function FilesProvider({ children }: { children: ReactNode }) {
 
   const initFileTree = async (project: IProject) => {
     await initializeFileTree(project);
-    setFiles(getFileTree());
+    setFiles({ ...getFileTree() });
   };
 
   const handleFileOpen = (item: IFile) => {
@@ -58,17 +69,17 @@ export function FilesProvider({ children }: { children: ReactNode }) {
       setOpenFiles([...openFiles, item]);
     }
     setSelectedFile(item);
-    setFiles(getFileTree());
+    setFiles({ ...getFileTree() });
   };
 
   const handleFolderOpen = (item: IFolder) => {
     item.open = true;
-    setFiles(getFileTree());
+    setFiles({ ...getFileTree() });
   };
 
   const handleFolderClose = (item: IFolder) => {
     item.open = false;
-    setFiles(getFileTree());
+    setFiles({ ...getFileTree() });
   };
 
   const handleFileClose = (item: IFile) => {
@@ -80,47 +91,57 @@ export function FilesProvider({ children }: { children: ReactNode }) {
     } else {
       setSelectedFile(openFiles[openFiles.length - 1]);
     }
-    setFiles(getFileTree());
+    setFiles({ ...getFileTree() });
   };
 
-  const addFile = (item: IFile) => {
-    addFileOrFolder(item);
-    setFiles(getFileTree());
+  const addFile = (destination: IFolder) => {
+    //const newFile = generateFileOrFolder("file", "untitled", parent);
+    //addFileOrFolder(newFile);
+    _addFile("untitled", destination);
+    setFiles({ ...getFileTree() });
   };
 
-  const renameFile = (item: IFile, newName: string) => {
-    renameFileOrFolder(item, newName);
-    setFiles(getFileTree());
+  const renameFile = (item: IFile, name: string) => {
+    //renameFileOrFolder(item, newName);
+    _renameFile(item, name);
+    setFiles({ ...getFileTree() });
   };
 
-  const moveFile = (item: IFile, newParent: IFolder) => {
-    moveFileOrFolder(item, newParent);
-    setFiles(getFileTree());
+  const moveFile = (item: IFile, destination: IFolder) => {
+    //moveFileOrFolder(item, newParent);
+    _moveFile(item, destination);
+    setFiles({ ...getFileTree() });
   };
 
   const deleteFile = (item: IFile) => {
-    removeFileOrFolder(item);
-    setFiles(getFileTree());
+    //removeFileOrFolder(item);
+    _removeFile(item);
+    setFiles({ ...getFileTree() });
   };
 
-  const addFolder = (item: IFolder) => {
-    addFileOrFolder(item);
-    setFiles(getFileTree());
+  const addFolder = (destination: IFolder) => {
+    //const newFolder = generateFileOrFolder("folder", "untitled", parent);
+    //addFileOrFolder(newFolder);
+    _addFolder("untitled", destination);
+    setFiles({ ...getFileTree() });
   };
 
-  const renameFolder = (item: IFolder, newName: string) => {
-    renameFileOrFolder(item, newName);
-    setFiles(getFileTree());
+  const renameFolder = (item: IFolder, name: string) => {
+    //renameFileOrFolder(item, newName);
+    _renameFolder(item, name);
+    setFiles({ ...getFileTree() });
   };
 
-  const moveFolder = (item: IFolder, newParent: IFolder) => {
-    moveFileOrFolder(item, newParent);
-    setFiles(getFileTree());
+  const moveFolder = (item: IFolder, destination: IFolder) => {
+    //moveFileOrFolder(item, newParent);
+    _moveFolder(item, destination);
+    setFiles({ ...getFileTree() });
   };
 
   const deleteFolder = (item: IFolder) => {
-    removeFileOrFolder(item);
-    setFiles(getFileTree());
+    //removeFileOrFolder(item);
+    _removeFolder(item);
+    setFiles({ ...getFileTree() });
   };
 
   const value: IFilesContext = {

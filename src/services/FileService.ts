@@ -21,135 +21,90 @@ export function getFileTree(): IFolder {
   return fileTree.tree;
 }
 
-export async function openFile(item: IFile) {
-  if (fileTree.newFiles[item.path]) return fileTree.newFiles[item.path];
-  if (fileTree.modifiedFiles[item.path]) return fileTree.modifiedFiles[item.path];
-
-  const retrieved = getFileFolderOrParentFromTree(item);
-  if (retrieved && retrieved.content) return retrieved;
-
-  const content = await getFileContentsFromGithub(project, item);
-  content ? (item.content = content) : null;
-  return retrieved;
+export function addFile(name: string, destination: IFolder, content: string = "") {
+  const file = createFile(name, destination, content);
+  const parent = getParent(file);
+  parent.children.push(file);
+  parent.children.sort(compareFilesOrFoldersByName);
+  fileTree.newFiles[file.path] = file;
+  return file;
 }
 
-export function updateFile(item: IFile, content: string) {
-  if (fileTree.newFiles[item.path]) {
-    fileTree.newFiles[item.path].content = content;
-    return;
-  }
-  if (fileTree.modifiedFiles[item.path]) {
-    fileTree.modifiedFiles[item.path].content = content;
-    return;
-  }
+export function addFolder(name: string, destination: IFolder) {
+  const folder = createFolder(name, destination);
+  const parent = getParent(folder);
+  parent.children.push(folder);
+  parent.children.sort(compareFilesOrFoldersByName);
+  fileTree.newFolders[folder.path] = folder;
+  return folder;
+}
 
-  const retrieved = getFileFolderOrParentFromTree(item);
-  if (retrieved && retrieved.type === "file") {
-    retrieved.modified = true;
-    retrieved.content = content;
-    fileTree.modifiedFiles[retrieved.path] = retrieved;
+export function removeFile(item: IFile) {
+  const file = (fileTree.removedFiles[item.path] = item);
+  const parent = getParent(file);
+  fileTree.newFiles[file.path] ? delete fileTree.newFiles[file.path] : null;
+  fileTree.modifiedFiles[file.path] ? delete fileTree.modifiedFiles[file.path] : null;
+  parent.children = parent.children.filter((child: IFile | IFolder) => child !== file);
+}
+
+export function removeFolder(item: IFolder) {
+  const folder = (fileTree.removedFolders[item.path] = item);
+  const parent = getParent(folder);
+  fileTree.newFolders[folder.path] ? delete fileTree.newFiles[folder.path] : null;
+  parent.children = parent.children.filter((child: IFile | IFolder) => child !== folder);
+  if (folder.children) {
+    for (const child of folder.children) {
+      child.type === "file" ? removeFile(child) : null;
+      child.type === "folder" ? removeFolder(child) : null;
+    }
   }
 }
 
-export function addFileOrFolder(item: IFile | IFolder): IFile | IFolder {
-  let newItem;
-  if (item.type === "file") {
-    newItem = fileTree.newFiles[item.path] = item;
-  } else {
-    newItem = fileTree.newFolders[item.path] = item;
-  }
-
-  const parent = getFileFolderOrParentFromTree(newItem, true);
-
-  if (parent && newItem && parent.type === "folder") {
-    parent.children.push(newItem);
-    parent.children.sort(compareFilesOrFoldersByName);
-  }
-
-  return newItem;
+export function moveFile(item: IFile, destination: IFolder) {
+  addFile(item.name, destination, item.content);
+  removeFile(item);
 }
 
-export function removeFileOrFolder(item: IFile | IFolder) {
-  let removedItem: IFile | IFolder;
-
-  if (item.type && item.type === "file") {
-    removedItem = fileTree.removedFiles[item.path] = item;
-    if (fileTree.newFiles[item.path]) delete fileTree.newFiles[item.path];
-    if (fileTree.modifiedFiles[item.path]) delete fileTree.modifiedFiles[item.path];
-  }
-
-  if (item.type && item.type === "folder") {
-    removedItem = fileTree.removedFolders[item.path] = item;
+export function moveFolder(item: IFolder, destination: IFolder) {
+  const folder = addFolder(item.name, destination);
+  if (item.children) {
     for (const child of item.children) {
-      removeFileOrFolder(child);
-    }
-    if (fileTree.newFolders[item.path]) delete fileTree.newFolders[item.path];
-  }
-
-  const parent = getFileFolderOrParentFromTree(item, true);
-
-  if (parent && parent.type === "folder") {
-    const index = parent.children.findIndex((i) => i.name === removedItem.name);
-    if (index !== -1) {
-      parent.children.splice(index, 1);
+      child.type === "file" ? moveFile(child, folder) : null;
+      child.type === "folder" ? moveFolder(child, folder) : null;
     }
   }
 }
 
-export function moveFileOrFolder(item: IFile | IFolder, newParent: IFolder) {
-  if (item.type === "file") {
-    addFileOrFolder({ ...item, path: newParent.path + "/" + item.name });
-    removeFileOrFolder(item);
-    return;
-  }
+export function renameFile(item: IFile, name: string) {
+  const destination = getParent(item);
+  addFile(name, destination, item.content);
+  removeFile(item);
+}
 
-  if (item.type == "folder") {
-    const newFolder = addFileOrFolder({ ...item, path: newParent.path + "/" + item.name });
+export function renameFolder(item: IFolder, name: string) {
+  const destination = getParent(item);
+  const folder = addFolder(name, destination);
+  if (item.children) {
     for (const child of item.children) {
-      moveFileOrFolder(child, newFolder);
+      child.type === "file" ? moveFile(child, folder) : null;
+      child.type === "folder" ? moveFolder(child, folder) : null;
     }
-    removeFileOrFolder(item);
   }
+  removeFolder(item);
 }
 
-export function renameFileOrFolder(item: IFile | IFolder, newName: string) {
+export function getParent(item: IFile | IFolder) {
   const path = item.path.split("/");
-  const newPath = path.slice(0, -1).concat(newName).join("/");
-
-  if (item.type === "file") {
-    addFileOrFolder({ ...item, path: newPath });
-    removeFileOrFolder(item);
-    return;
-  }
-
-  if (item.type == "folder") {
-    const newFolder = addFileOrFolder({ ...item, path: newPath });
-    for (const child of item.children) {
-      moveFileOrFolder(child, newFolder);
-    }
-    removeFileOrFolder(item);
-  }
-}
-
-function getFileFolderOrParentFromTree(f: IFile | IFolder, getParent: boolean = false) {
-  const path = f.path.split("/");
   const target = path.pop();
-  let pointer = fileTree.tree?.children;
-  for (const name of path) {
-    const match = pointer?.find((child) => child.name === name);
-    pointer = match?.children;
+  let pathPointer: IFolder = fileTree.tree;
+  for (const pathPart of path) {
+    if (pathPointer.children) {
+      const result = pathPointer.children.find((child) => child.name === pathPart && child.type === "folder");
+      result && result.type === "folder" ? (pathPointer = result) : null;
+    }
   }
-  return pointer?.find((child) => child.name === target);
+  return pathPointer;
 }
-
-// export async function getFilesFromProject(project: IProject, branch: string) {
-//   const fileTree = await getGithubRepoTree(project.repo.owner, project.repo.name, "main");
-//   return createTree(fileTree);
-// }
-
-// export function commitFiles(){
-
-// }
 
 async function getFilesfromGithubTree(project: IProject, branch: string = "main"): IFolder {
   const data = await getGithubRepoTree(project.repo.owner, project.repo.name, branch);
@@ -218,6 +173,52 @@ async function getFilesfromGithubTree(project: IProject, branch: string = "main"
 
   return root;
 }
+
+export function createFile(name: string, destination: IFolder, content: string = "") {
+  const path = destination.type != "root" ? destination.path + "/" + name : name;
+  return {
+    name: name,
+    path: path,
+    type: "file",
+    modified: false,
+    content: content,
+    open: false,
+  } as IFile;
+}
+
+export function createFolder(name: string, destination: IFolder) {
+  const path = destination.type != "root" ? destination.path + "/" + name : name;
+  return {
+    name: name,
+    path: path,
+    type: "folder",
+    children: [],
+    open: false,
+  } as IFolder;
+}
+
+// export function generateFileOrFolder(type: "file" | "folder", name: string, parent: IFolder) {
+//   const path = parent.type != "root" ? parent.path + "/" + name : name;
+//   if (type === "file") {
+//     const item: IFile = {
+//       name: name,
+//       path: path,
+//       type: "file",
+//       modified: false,
+//       open: false,
+//     };
+//     return item;
+//   } else {
+//     const item: IFolder = {
+//       name: name,
+//       path: path,
+//       type: "folder",
+//       children: [],
+//       open: false,
+//     };
+//     return item;
+//   }
+// }
 
 function compareFilesOrFoldersByName(a: IFile | IFolder, b: IFile | IFolder) {
   if (a.name < b.name) {
