@@ -11,9 +11,9 @@
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
-    "@mui/icons-material": "^5.11.11",
+    "@mui/icons-material": "^5.11.16",
     "@mui/lab": "*",
-    "@mui/material": "^5.11.13",
+    "@mui/material": "^5.11.16",
     "@octokit/rest": "^19.0.7",
     "@octokit/types": "^9.0.0",
     "@types/react-timeago": "^4.1.3",
