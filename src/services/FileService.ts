@@ -1,18 +1,21 @@
-import { getGithubRepoTree } from "../services/GithubService";
+import { getGithubRepoTree, getGithubRepoFileContent } from "../services/GithubService";
 import { GithubTree } from "../types/Github";
 import { IProject } from "../types/Project";
-import { IFileTree, IFile, IFolder } from "../types/Files";
+import { IFileTree, IFile, IFolder, IRepo } from "../types/Files";
 
 const fileTree: IFileTree = {
   tree: {} as IFolder,
+  repo: {} as IRepo,
   newFiles: {},
   newFolders: {},
   modifiedFiles: {},
+  unsavedChanges: {},
   removedFiles: {},
   removedFolders: {},
 };
 
 export async function initializeFileTree(project: IProject, branch: string = "main") {
+  fileTree.repo = { owner: project.repo.owner, name: project.repo.name, branch: branch };
   fileTree.tree = await getFilesfromGithubTree(project, branch);
   return fileTree.tree;
 }
@@ -104,6 +107,13 @@ export function getParent(item: IFile | IFolder) {
     }
   }
   return pathPointer;
+}
+
+export async function getFileContent(item: IFile) {
+  if (!item.content) {
+    item.content = await getGithubRepoFileContent(fileTree.repo.owner, fileTree.repo.name, item.path, fileTree.repo.branch);
+  }
+  return item.content;
 }
 
 async function getFilesfromGithubTree(project: IProject, branch: string = "main"): IFolder {

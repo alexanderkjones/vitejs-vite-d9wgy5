@@ -61,3 +61,17 @@ export async function getGithubRepoTree(owner: string, repo: string, branch: str
   const currentTree = await octokit.rest.git.getTree({ owner, repo, tree_sha, recursive });
   return currentTree;
 }
+
+// Contents
+
+export async function getGithubRepoFileContent(owner: string, repo: string, path: string, branch: string) {
+  const { data } = await octokit.rest.repos.getContent({
+    owner,
+    repo,
+    path,
+    ref: branch,
+  });
+  if (data.content) {
+    return Buffer.from(data.content, "base64").toString();
+  }
+}
